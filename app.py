@@ -227,3 +227,4 @@ elif menu == "Feature Importance":
     sns.barplot(x=importance, y=X.columns, palette="viridis", ax=ax5)
     ax5.set_title("Pentingnya Fitur")
     st.pyplot(fig5)
+
