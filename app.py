@@ -77,8 +77,9 @@ menu = st.sidebar.radio(
 # ===============================
 # LOAD DATASET
 # ===============================
-file_path = "D:/UAS Data Mining_Wega ramadhan_Rizky Aditiya S/UAS_Data_Mining_Wega_Rizy.csv"
+file_path = "UAS_Data_Mining_Wega_Rizy.csv"
 df = pd.read_csv(file_path)
+
 
 
 # ===============================
@@ -227,4 +228,5 @@ elif menu == "Feature Importance":
     sns.barplot(x=importance, y=X.columns, palette="viridis", ax=ax5)
     ax5.set_title("Pentingnya Fitur")
     st.pyplot(fig5)
+
 
