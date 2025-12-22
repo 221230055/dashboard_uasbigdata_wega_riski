@@ -37,9 +37,7 @@ menu = st.sidebar.radio(
 # =====================================================
 # LOAD DATASET (SAMA DENGAN IPYNB)
 # =====================================================
-df = pd.read_csv(
-    r"D:\UAS Data Mining_Wega ramadhan_Rizky Aditiya S\UAS_Data_Mining_Wega_Rizy.csv"
-)
+df = pd.read_csv("UAS_Data_Mining_Wega_Rizy.csv")
 
 # =====================================================
 # HOME
@@ -210,3 +208,4 @@ elif menu == "Feature Importance":
     ax6.barh(X.columns, model_xgb.feature_importances_)
     ax6.set_title("Feature Importance - XGBoost")
     st.pyplot(fig6)
+
