@@ -3,130 +3,88 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.preprocessing import StandardScaler
+
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeClassifier
 from xgboost import XGBClassifier
+
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score,
-    f1_score, roc_auc_score, confusion_matrix, roc_curve,
-    classification_report
+    f1_score, roc_auc_score, confusion_matrix, roc_curve
 )
 
-# ===============================
-# 1. PAGE CONFIG
-# ===============================
+sns.set(style="whitegrid")
+
+# =====================================================
+# PAGE CONFIG
+# =====================================================
 st.set_page_config(
-    page_title="Heart Disease Prediction",
+    page_title="Heart Disease Classification",
     page_icon="❤️",
     layout="wide"
 )
 
-# ===============================
-# 2. CUSTOM CSS 
-# ===============================
-st.markdown("""
-<style>
-
-body { background-color: #F2F4F4; }
-
-.sidebar .sidebar-content {
-    background-color: #283747;
-}
-
-.main-title {
-    font-size: 40px;
-    font-weight: 900;
-    color: #2C3E50;
-    text-align: center;
-    margin-bottom: 10px;
-}
-
-.section-title {
-    font-size: 28px;
-    font-weight: 700;
-    color: #34495E;
-    margin-top: 20px;
-}
-
-.metric-box {
-    background-color: #FDFEFE;
-    padding: 15px;
-    border-radius: 12px;
-    border: 1px solid #D5D8DC;
-}
-
-.support-box {
-    background-color: #EBF5FB;
-    padding: 15px;
-    border-radius: 12px;
-    border: 1px solid #AED6F1;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# ===============================
-# 3. SIDEBAR NAVIGATION
-# ===============================
-st.sidebar.title("📌 Menu Navigasi")
+# =====================================================
+# SIDEBAR
+# =====================================================
+st.sidebar.title("📌 Menu")
 menu = st.sidebar.radio(
-    "Pilih Halaman:",
+    "Pilih Halaman",
     ["Home", "EDA", "Modeling", "Feature Importance"]
 )
 
-# ===============================
-# LOAD DATASET
-# ===============================
-file_path = "UAS_Data_Mining_Wega_Rizy.csv"
-df = pd.read_csv(file_path)
+# =====================================================
+# LOAD DATASET (SAMA DENGAN IPYNB)
+# =====================================================
+df = pd.read_csv(
+    r"D:\UAS Data Mining_Wega ramadhan_Rizky Aditiya S\UAS_Data_Mining_Wega_Rizy.csv"
+)
 
-
-
-# ===============================
-# HOME PAGE
-# ===============================
+# =====================================================
+# HOME
+# =====================================================
 if menu == "Home":
-    st.markdown('<div class="main-title">Klasifikasi Penyakit Jantung Menggunakan XGBoost</div>',
-                unsafe_allow_html=True)
+    st.title("❤️ Klasifikasi Penyakit Jantung")
+    st.write("Menggunakan **XGBoost** dan **Decision Tree**")
 
-    st.markdown('<div class="section-title">Dataset</div>', unsafe_allow_html=True)
+    st.subheader("Preview Dataset")
     st.dataframe(df.head())
 
+    st.markdown("""
+    **Target:**
+    - **0** → Tidak Berisiko Penyakit Jantung  
+    - **1** → Berisiko Penyakit Jantung
+    """)
 
-
-# ===============================
-# EDA PAGE
-# ===============================
+# =====================================================
+# EDA
+# =====================================================
 elif menu == "EDA":
-    st.markdown('<div class="main-title">📊 Visualisasi Dataset (EDA)</div>',
-                unsafe_allow_html=True)
+    st.title("📊 Exploratory Data Analysis")
 
-    # ---------- Distribusi Target ----------
-    st.markdown('<div class="section-title">Distribusi Kelas Target</div>',
-                unsafe_allow_html=True)
-
+    # Distribusi Target
+    st.subheader("Distribusi Kelas Target")
     fig1, ax1 = plt.subplots()
-    sns.countplot(x=df["target"], palette="viridis", ax=ax1)
+    sns.countplot(x=df["target"], ax=ax1)
+    plt.title("Distribusi Kelas Target (0 = Tidak Berisiko, 1 = Berisiko)")
+    ax1.set_xlabel("Target")
+    ax1.set_ylabel("Jumlah")
     st.pyplot(fig1)
 
-    # ---------- Heatmap ----------
-    st.markdown('<div class="section-title">Heatmap Korelasi</div>',
-                unsafe_allow_html=True)
-
-    fig2, ax2 = plt.subplots(figsize=(10, 7))
-    sns.heatmap(df.corr(), annot=False, cmap="viridis", ax=ax2)
+    # Heatmap Korelasi
+    st.subheader("Heatmap Korelasi")
+    fig2, ax2 = plt.subplots(figsize=(12, 8))
+    sns.heatmap(df.corr(), cmap="coolwarm", annot=False, ax=ax2)
     st.pyplot(fig2)
 
-
-# ===============================
-# MODEL TRAINING & EVALUATION PAGE
-# ===============================
+# =====================================================
+# MODELING
+# =====================================================
 elif menu == "Modeling":
+    st.title("⚙️ Modeling & Evaluasi")
 
-    st.markdown('<div class="main-title">⚙️ Modeling & Evaluasi XGBoost</div>',
-                unsafe_allow_html=True)
-
-    # PREPROCESSING
+    # ---------------- Preprocessing ----------------
     df_clean = df.drop_duplicates().dropna()
 
     X = df_clean.drop("target", axis=1)
@@ -136,81 +94,99 @@ elif menu == "Modeling":
     X_scaled = scaler.fit_transform(X)
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X_scaled, y, test_size=0.2, random_state=42
+        X_scaled, y,
+        test_size=0.2,
+        train_size=0.8,
+        random_state=42
     )
 
-    # MODEL
-    model = XGBClassifier(
+    # ---------------- Model XGBoost ----------------
+    model_xgb = XGBClassifier(
         n_estimators=200,
         learning_rate=0.05,
         max_depth=4,
         subsample=0.8,
         colsample_bytree=0.8,
+        eval_metric="logloss"
+    )
+
+    model_xgb.fit(X_train, y_train)
+    pred_xgb = model_xgb.predict(X_test)
+    prob_xgb = model_xgb.predict_proba(X_test)[:, 1]
+
+    # ---------------- Model Decision Tree ----------------
+    model_dt = DecisionTreeClassifier(
+        criterion="gini",
+        max_depth=None,
         random_state=42
     )
 
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-    y_proba = model.predict_proba(X_test)[:, 1]
+    model_dt.fit(X_train, y_train)
+    pred_dt = model_dt.predict(X_test)
+    prob_dt = model_dt.predict_proba(X_test)[:, 1]
 
-    # METRICS
-    acc = accuracy_score(y_test, y_pred)
-    prec = precision_score(y_test, y_pred)
-    rec = recall_score(y_test, y_pred)
-    f1 = f1_score(y_test, y_pred)
-    auc = roc_auc_score(y_test, y_proba)
+    # ---------------- Evaluasi ----------------
+    def evaluate_model(y_true, y_pred, y_prob):
+        return {
+            "Accuracy": accuracy_score(y_true, y_pred),
+            "Precision": precision_score(y_true, y_pred),
+            "Recall": recall_score(y_true, y_pred),
+            "F1-Score": f1_score(y_true, y_pred),
+            "ROC-AUC": roc_auc_score(y_true, y_prob)
+        }
+
+    xgb_result = evaluate_model(y_test, pred_xgb, prob_xgb)
+    dt_result = evaluate_model(y_test, pred_dt, prob_dt)
+
+    comparison = pd.DataFrame(
+        [xgb_result, dt_result],
+        index=["XGBoost", "Decision Tree"]
+    )
+
+    st.subheader("Tabel Perbandingan Model")
+    st.dataframe(comparison)
+
+    # ---------------- Confusion Matrix ----------------
+    st.subheader("Confusion Matrix")
 
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown('<div class="section-title">Hasil Evaluasi</div>', unsafe_allow_html=True)
-        st.markdown(f"""
-            <div class="metric-box">
-                <b>Accuracy:</b> {acc}<br>
-                <b>Precision:</b> {prec}<br>
-                <b>Recall:</b> {rec}<br>
-                <b>F1-Score:</b> {f1}<br>
-                <b>ROC-AUC:</b> {auc}
-            </div>
-        """, unsafe_allow_html=True)
+        st.write("XGBoost")
+        fig3, ax3 = plt.subplots()
+        sns.heatmap(confusion_matrix(y_test, pred_xgb),
+                    annot=True, fmt="d", cmap="Blues", ax=ax3)
+        st.pyplot(fig3)
 
     with col2:
-        st.markdown('<div class="section-title">Support</div>', unsafe_allow_html=True)
-        st.markdown(f"""
-            <div class="support-box">
-                Kelas 0: <b>{(y_test==0).sum()}</b><br>
-                Kelas 1: <b>{(y_test==1).sum()}</b><br>
-                Total Data Uji: <b>{len(y_test)}</b>
-            </div>
-        """, unsafe_allow_html=True)
+        st.write("Decision Tree")
+        fig4, ax4 = plt.subplots()
+        sns.heatmap(confusion_matrix(y_test, pred_dt),
+                    annot=True, fmt="d", cmap="Greens", ax=ax4)
+        st.pyplot(fig4)
 
-    # CONFUSION MATRIX
-    st.markdown('<div class="section-title">Confusion Matrix</div>',
-                unsafe_allow_html=True)
+    # ---------------- ROC Curve ----------------
+    st.subheader("ROC Curve")
 
-    cm = confusion_matrix(y_test, y_pred)
-    fig3, ax3 = plt.subplots()
-    sns.heatmap(cm, annot=True, fmt='d', cmap="Blues", ax=ax3)
-    st.pyplot(fig3)
+    fpr_xgb, tpr_xgb, _ = roc_curve(y_test, prob_xgb)
+    fpr_dt, tpr_dt, _ = roc_curve(y_test, prob_dt)
 
-    # ROC CURVE
-    st.markdown('<div class="section-title">ROC Curve</div>',
-                unsafe_allow_html=True)
+    fig5, ax5 = plt.subplots()
+    ax5.plot(fpr_xgb, tpr_xgb,
+             label=f"XGBoost (AUC = {xgb_result['ROC-AUC']:.3f})")
+    ax5.plot(fpr_dt, tpr_dt,
+             label=f"Decision Tree (AUC = {dt_result['ROC-AUC']:.3f})")
+    ax5.plot([0, 1], [0, 1], "k--", label="Random Guess")
+    ax5.set_xlabel("False Positive Rate")
+    ax5.set_ylabel("True Positive Rate")
+    ax5.legend()
+    st.pyplot(fig5)
 
-    fpr, tpr, _ = roc_curve(y_test, y_proba)
-    fig4, ax4 = plt.subplots()
-    ax4.plot(fpr, tpr, label=f"AUC = {auc}")
-    ax4.plot([0, 1], [0, 1], linestyle="--", color="gray")
-    st.pyplot(fig4)
-
-
-# ===============================
-# FEATURE IMPORTANCE PAGE
-# ===============================
+# =====================================================
+# FEATURE IMPORTANCE
+# =====================================================
 elif menu == "Feature Importance":
-
-    st.markdown('<div class="main-title">🔍 Feature Importance</div>',
-                unsafe_allow_html=True)
+    st.title("🔍 Feature Importance - XGBoost")
 
     df_clean = df.drop_duplicates().dropna()
     X = df_clean.drop("target", axis=1)
@@ -219,14 +195,18 @@ elif menu == "Feature Importance":
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
-    model = XGBClassifier()
-    model.fit(X_scaled, y)
+    model_xgb = XGBClassifier(
+        n_estimators=200,
+        learning_rate=0.05,
+        max_depth=4,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        eval_metric="logloss"
+    )
 
-    importance = model.feature_importances_
+    model_xgb.fit(X_scaled, y)
 
-    fig5, ax5 = plt.subplots()
-    sns.barplot(x=importance, y=X.columns, palette="viridis", ax=ax5)
-    ax5.set_title("Pentingnya Fitur")
-    st.pyplot(fig5)
-
-
+    fig6, ax6 = plt.subplots(figsize=(10, 6))
+    ax6.barh(X.columns, model_xgb.feature_importances_)
+    ax6.set_title("Feature Importance - XGBoost")
+    st.pyplot(fig6)
